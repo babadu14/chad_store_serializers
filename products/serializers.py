@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from products.models import Review, Product
+from products.models import Review, Product, Cart
 
 
 class ProductSerializer(serializers.Serializer):
@@ -7,6 +7,7 @@ class ProductSerializer(serializers.Serializer):
     description = serializers.CharField()
     price = serializers.FloatField()
     currency = serializers.ChoiceField(choices=['GEL', 'USD', 'EUR'])
+    quantity = serializers.IntegerField()
 
 
 class ReviewSerializer(serializers.Serializer):
@@ -38,3 +39,46 @@ class ReviewSerializer(serializers.Serializer):
         )
         return review
     
+
+class CartSerializer(serializers.Serializer):
+    product_id = serializers.IntegerField(write_only=True)
+    quantity = serializers.IntegerField(default=1)
+
+    def validate_product_id(self, value):
+        if not Product.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Invalid product_id. Product does not exist.")
+        return value
+
+
+class TagSerializer(serializers.Serializer):
+    product_id = serializers.IntegerField(write_only=True)
+    tag_name = serializers.CharField()
+
+    def validate(self, data):
+        product_id = data.get("product_id")
+        tag_name = data.get("tag_name")
+
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            raise serializers.ValidationError({"product_id": "Invalid product_id. Product does not exist."})
+
+        if product.tags.filter(name=tag_name).exists():
+            raise serializers.ValidationError({"tag_name": "This tag already exists for the given product."})
+
+        return data
+    
+    def validate_product_id(self, value):
+        try:
+            Product.objects.get(id=value)
+        except Product.DoesNotExist:
+            raise serializers.ValidationError("Invalid product_id. Product does not exist.")
+        return value
+    
+class FavoriteProductSerializer(serializers.Serializer):
+    product_id = serializers.IntegerField()
+
+    def validate_product_id(self, value):
+        if  not Product.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Invalid product_id. Product does not exist.")
+        return value
