@@ -87,5 +87,5 @@ def favorite_product_view(request):
         serializer = FavoriteProductSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'message': 'Tag added succesfully'}, status=status.HTTP_201_CREATED)
+            return Response({'message': 'Product added succesfully'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
