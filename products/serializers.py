@@ -1,24 +1,15 @@
 from rest_framework import serializers
-from products.models import Review, Product, Cart
+from products.models import Review, Product, Cart, ProductTag, FavoriteProduct
 
-
-class ProductSerializer(serializers.Serializer):
-    name = serializers.CharField()
-    description = serializers.CharField()
-    price = serializers.FloatField()
-    currency = serializers.ChoiceField(choices=['GEL', 'USD', 'EUR'])
-    quantity = serializers.IntegerField()
-
-
-class ReviewSerializer(serializers.Serializer):
+class ReviewSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField(write_only=True)
-    content = serializers.CharField()
-    rating = serializers.IntegerField()
+
+    class Meta:
+        model = Review
+        fields = ['product_id', 'content', 'rating']
 
     def validate_product_id(self, value):
-        try:
-            Product.objects.get(id=value)
-        except Product.DoesNotExist:
+        if not Product.objects.filter(id=value).exists():
             raise serializers.ValidationError("Invalid product_id. Product does not exist.")
         return value
 
@@ -28,33 +19,32 @@ class ReviewSerializer(serializers.Serializer):
         return value
 
     def create(self, validated_data):
-        product = Product.objects.get(id=validated_data['product_id'])
+        product = Product.objects.get(id=validated_data.pop('product_id'))
         user = self.context['request'].user
+        return Review.objects.create(product=product, user=user, **validated_data)
 
-        review = Review.objects.create(
-            product=product,
-            user=user,
-            content=validated_data['content'],
-            rating=validated_data['rating'],
-        )
-        return review
+
+
+
+
+class CartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cart
+        exclude = ['created_at', 'updated_at']
     
-
-class CartSerializer(serializers.Serializer):
-    product_id = serializers.IntegerField(write_only=True)
-    quantity = serializers.IntegerField(default=1)
-
     def validate_product_id(self, value):
         if not Product.objects.filter(id=value).exists():
             raise serializers.ValidationError("Invalid product_id. Product does not exist.")
         return value
+#ამოწმებს მიცემული product_id არის თუ არა მონაცემთა ბაზაში
 
 
-class TagSerializer(serializers.Serializer):
-    product_id = serializers.IntegerField(write_only=True)
-    tag_name = serializers.CharField()
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductTag
+        exclude = ['created_at', 'updated_at']
 
-    def validate(self, data):
+    def validate_tag_name(self, data):
         product_id = data.get("product_id")
         tag_name = data.get("tag_name")
 
@@ -67,6 +57,7 @@ class TagSerializer(serializers.Serializer):
             raise serializers.ValidationError({"tag_name": "This tag already exists for the given product."})
 
         return data
+    # ეს მეთოდი ამოწმებს არსებობს თუ არა პროდუქტ და შემდეგ ამოწმებს იმას თუ tag_name არის unique ამ კონკრეტული პროდუქტისთვის
     
     def validate_product_id(self, value):
         try:
@@ -74,11 +65,25 @@ class TagSerializer(serializers.Serializer):
         except Product.DoesNotExist:
             raise serializers.ValidationError("Invalid product_id. Product does not exist.")
         return value
-    
-class FavoriteProductSerializer(serializers.Serializer):
-    product_id = serializers.IntegerField()
+    #ამოწმებს მიცემული product_id შეესაბამება თუ არა რაიმე პროდუქტს
+class FavoriteProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FavoriteProduct
+        exclude = ['created_at', 'updated_at']
+
 
     def validate_product_id(self, value):
         if  not Product.objects.filter(id=value).exists():
             raise serializers.ValidationError("Invalid product_id. Product does not exist.")
         return value
+    #ეს მეთოდი ადასტურებს, რომ product_id არსებობს პროდუქტის Table-ში. 
+    # თუ არ არსებობს პროდუქტი მოცემული ID-ით, ის წარმოშობს ValidationError-ს. თუ არსებობს, ის აბრუნებს მნიშვნელობას.
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    tags = TagSerializer(many=True, read_only=True)
+    reviews = ReviewSerializer(many=True, read_only=True)
+    
+    class Meta:
+        exclude = ['created_at', 'updated_at',] 
+        model = Product

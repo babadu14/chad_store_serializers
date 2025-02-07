@@ -14,9 +14,12 @@ class Product(TimeStampedModel, models.Model):
     def average_rating(self):
         pass
 
+    def __str__(self):
+        return self.name
+
 
 class Review(TimeStampedModel, models.Model):
-    product = models.ForeignKey('products.Product', on_delete=models.CASCADE)
+    product = models.ForeignKey('products.Product', related_name='reviews', on_delete=models.CASCADE)
     user = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True)
     content = models.TextField()
     rating = models.PositiveIntegerField(validators=[MaxValueValidator(5)])
@@ -29,6 +32,9 @@ class FavoriteProduct(TimeStampedModel, models.Model):
 
 class ProductTag(TimeStampedModel, models.Model):
     name = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Cart(TimeStampedModel, models.Model):
