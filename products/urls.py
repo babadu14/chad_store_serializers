@@ -1,11 +1,12 @@
 from django.urls import path
-from products.views import products_view, reviews_view, cart_view, product_tag_view, favorite_product_view, product_view
+from products.views import ProductAPIView, ReviewViewSet, CartViewSet, ProductTagView, FavoriteProductViewSet
 
 urlpatterns = [
-    path('products/', products_view, name="products"),
-    path('products/<int:pk>', product_view, name='product'),
-    path('reviews/', reviews_view, name="reviews"),
-    path('cart/', cart_view, name='cart'),
-    path('tags/', product_tag_view, name='tags'),
-    path('favorite/', favorite_product_view, name='favorite-product')
+    path('products/', ProductAPIView.as_view(), name="products"),
+    path('products/<int:pk>', ProductAPIView.as_view(), name='product'),
+    path('reviews/', ReviewViewSet.as_view(), name="reviews"),
+    path('cart/', CartViewSet.as_view(), name='cart'),
+    path('tags/', ProductTagView.as_view(), name='tags'),
+    path('favorites/', FavoriteProductViewSet.as_view(), name='favorite-product'),
+    #path('favorites/<int:pk>', FavoriteProductViewSet.as_view(), name='favorites' )
 ]

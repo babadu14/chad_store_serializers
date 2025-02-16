@@ -24,21 +24,6 @@ class ReviewSerializer(serializers.ModelSerializer):
         return Review.objects.create(product=product, user=user, **validated_data)
 
 
-
-
-
-class CartSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Cart
-        exclude = ['created_at', 'updated_at']
-    
-    def validate_product_id(self, value):
-        if not Product.objects.filter(id=value).exists():
-            raise serializers.ValidationError("Invalid product_id. Product does not exist.")
-        return value
-#ამოწმებს მიცემული product_id არის თუ არა მონაცემთა ბაზაში
-
-
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductTag
@@ -67,9 +52,13 @@ class TagSerializer(serializers.ModelSerializer):
         return value
     #ამოწმებს მიცემული product_id შეესაბამება თუ არა რაიმე პროდუქტს
 class FavoriteProductSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default = serializers.CurrentUserDefault())
+    product_id = serializers.IntegerField(write_only=True)
+
     class Meta:
         model = FavoriteProduct
-        exclude = ['created_at', 'updated_at']
+        fields = ['id', 'user', 'product_id', 'product']
+        read_only_fields = ['id', 'product']
 
 
     def validate_product_id(self, value):
@@ -79,6 +68,17 @@ class FavoriteProductSerializer(serializers.ModelSerializer):
     #ეს მეთოდი ადასტურებს, რომ product_id არსებობს პროდუქტის Table-ში. 
     # თუ არ არსებობს პროდუქტი მოცემული ID-ით, ის წარმოშობს ValidationError-ს. თუ არსებობს, ის აბრუნებს მნიშვნელობას.
 
+    def create(self, validated_data):
+        product_id = validated_data.pop('product_id')
+        user = validated_data.pop('user')
+
+        product = Product.objects.get(id=product_id)
+        favorite, created = FavoriteProduct.objects.get_or_create(user=user, product=product)
+
+        if not created:
+            raise serializers.ValidationError('This product is already in Favorites')
+        return favorite
+
 
 class ProductSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
@@ -87,3 +87,29 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         exclude = ['created_at', 'updated_at',] 
         model = Product
+
+
+class CartSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default = serializers.CurrentUserDefault())
+    products = ProductSerializer(many=True, read_only=True)
+    product_ids = serializers.PrimaryKeyRelatedField(source = 'products',
+                                                     queryset = Product.objects.all(),
+                                                     many=True,
+                                                     write_only = True)
+
+    class Meta:
+        model = Cart
+        fields = ['user', 'product_ids', 'products']
+    
+    def validate_product_id(self, value):
+        if not Product.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Invalid product_id. Product does not exist.")
+        return value
+#ამოწმებს მიცემული product_id არის თუ არა მონაცემთა ბაზაში
+
+    def create(self, validated_data):
+        user = validated_data.pop('user')
+        products = validated_data.pop('products')
+        cart, _ = Cart.objects.get_or_create(user=user)
+        cart.products.add(*products)
+        return cart
