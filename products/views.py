@@ -2,8 +2,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from rest_framework import status
-from products.models import Product, Review, Cart, ProductTag, FavoriteProduct
-from products.serializers import ProductSerializer, ReviewSerializer, CartSerializer, TagSerializer, FavoriteProductSerializer
+from products.models import Product, Review, Cart, ProductTag, FavoriteProduct, ProductImage
+from products.serializers import ProductSerializer, ReviewSerializer, CartSerializer, TagSerializer, FavoriteProductSerializer, ProductImageSerializer
 from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import (CreateModelMixin,
                                    ListModelMixin,
@@ -83,8 +83,32 @@ class CartViewSet(ListModelMixin, CreateModelMixin, GenericAPIView):
     serializer_class = CartSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self, *args, **kwargs):
+        queryset = self.queryset.filter(user=self.request.user)
+        return queryset
+        
+
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
     
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+    
+class ProductImageViewSet(CreateModelMixin, ListModelMixin, DestroyModelMixin, RetrieveModelMixin, GenericAPIView):
+    queryset = ProductImage
+    serializer_class = ProductImageSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return self.queryset.filter(product__id=self.kwargs['product_id'])
+    
+    def get(self, request, pk=None, *args, **kwargs):
+        if pk:
+            return self.retrieve(self, *args, **kwargs)
+        return self.list(request, *args, **kwargs)
+    
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+    
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)

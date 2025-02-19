@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from products.models import Review, Product, Cart, ProductTag, FavoriteProduct
+from products.models import Review, Product, Cart, ProductTag, FavoriteProduct, ProductImage
 
 class ReviewSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField(write_only=True)
@@ -113,3 +113,10 @@ class CartSerializer(serializers.ModelSerializer):
         cart, _ = Cart.objects.get_or_create(user=user)
         cart.products.add(*products)
         return cart
+    
+
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'image', 'product']
+        
