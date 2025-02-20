@@ -95,7 +95,7 @@ class CartViewSet(ListModelMixin, CreateModelMixin, GenericAPIView):
         return self.create(request, *args, **kwargs)
     
 class ProductImageViewSet(CreateModelMixin, ListModelMixin, DestroyModelMixin, RetrieveModelMixin, GenericAPIView):
-    queryset = ProductImage
+    queryset = ProductImage.objects.all()
     serializer_class = ProductImageSerializer
     permission_classes = [IsAuthenticated]
 
