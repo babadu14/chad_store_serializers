@@ -1,14 +1,30 @@
-from django.urls import path
+from django.urls import path, include
 from products.views import ProductAPIView, ReviewViewSet, CartViewSet, ProductTagView, FavoriteProductViewSet, ProductImageViewSet
+from rest_framework.routers import SimpleRouter, DefaultRouter
+
+from rest_framework_nested import routers
+
+router = routers.DefaultRouter()
+router.register('products', ProductAPIView)
+router.register('favorites',FavoriteProductViewSet)
+router.register('cart', CartViewSet)
+router.register('tags', ProductTagView)
+
+
+
+products_router = routers.NestedDefaultRouter(
+    router,
+    'products',
+    lookup='product'
+)
+
+
+
+products_router.register('images', ProductImageViewSet)
+products_router.register('reviews',ReviewViewSet)
 
 urlpatterns = [
-    path('products/', ProductAPIView.as_view(), name="products"),
-    path('products/<int:pk>', ProductAPIView.as_view(), name='product'),
-    path('reviews/', ReviewViewSet.as_view(), name="reviews"),
-    path('cart/', CartViewSet.as_view(), name='cart'),
-    path('tags/', ProductTagView.as_view(), name='tags'),
-    path('favorites/', FavoriteProductViewSet.as_view(), name='favorite-product'),
-    path('products/<int:product_id>/images/', ProductImageViewSet.as_view(), name='product-images'),
-    path('products/<int:product_id>/images/<int:pk>', ProductImageViewSet.as_view(), name='product-image'),
-    
+    path('', include(router.urls)),
+    path('', include(products_router.urls)),
 ]
+

@@ -3,38 +3,26 @@ from django.shortcuts import render
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, UpdateModelMixin, RetrieveModelMixin, DestroyModelMixin
-
+from rest_framework.viewsets import GenericViewSet
 from categories.models import Category, CategoryImage
 from .serializers import CategoryDetailSerializer, CategoryImageSerializer, CategorySerializer
 
-class CategoryListView(ListModelMixin, GenericAPIView):
+class CategoryListView(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
     
 
-class CategoryDetailView(RetrieveModelMixin, GenericAPIView):
-    queryset = Category.objects.all()
-    serializer_class = CategoryDetailSerializer
+# class CategoryDetailView(RetrieveModelMixin, GenericViewSet):
+#     queryset = Category.objects.all()
+#     serializer_class = CategoryDetailSerializer
 
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
     
 
-class CategoryImageViewSet(ListModelMixin, CreateModelMixin, GenericAPIView):
+class CategoryImageViewSet(ListModelMixin,CreateModelMixin,GenericViewSet):
     queryset = CategoryImage.objects.all()
     serializer_class = CategoryImageSerializer
 
     def get_queryset(self):
-        cateogory_id = self.kwargs['category_id']
-
+        cateogory_id = self.kwargs['category_pk']
         return self.queryset.filter(category=cateogory_id)
-    
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-    
-    def post(self, request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)
     
