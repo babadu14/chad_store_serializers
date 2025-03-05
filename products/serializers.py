@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from products.models import Review, Product, Cart, ProductTag, FavoriteProduct, ProductImage
+from products.models import Review, Product, Cart, ProductTag, FavoriteProduct, ProductImage, CartItem
 
 class ReviewSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField(write_only=True)
@@ -21,8 +21,10 @@ class ReviewSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         product = Product.objects.get(id=validated_data.pop('product_id'))
         user = self.context['request'].user
+        existing_review = Review.objects.filter(product=product, user=user)
+        if existing_review.exists():
+            raise serializers.ValidationError('you have already reviewed this product')
         return Review.objects.create(product=product, user=user, **validated_data)
-
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -89,23 +91,6 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
 
 
-class CartSerializer(serializers.ModelSerializer):
-    user = serializers.HiddenField(default = serializers.CurrentUserDefault())
-    products = ProductSerializer(many=True, read_only=True)
-    product_ids = serializers.PrimaryKeyRelatedField(source = 'products',
-                                                     queryset = Product.objects.all(),
-                                                     many=True,
-                                                     write_only = True)
-
-    class Meta:
-        model = Cart
-        fields = ['user', 'product_ids', 'products']
-    
-    def validate_product_id(self, value):
-        if not Product.objects.filter(id=value).exists():
-            raise serializers.ValidationError("Invalid product_id. Product does not exist.")
-        return value
-#ამოწმებს მიცემული product_id არის თუ არა მონაცემთა ბაზაში
 
     def create(self, validated_data):
         user = validated_data.pop('user')
@@ -119,4 +104,58 @@ class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
         fields = ['id', 'image', 'product']
+
+
+class CartItemSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(),
+        write_only=True,
+        source='product'
+    )
+
+    total_price = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CartItem
+        fields = ['id', 'product', 'product_id',
+                  'quantity', 'price_at_time_of_addition',
+                  'total_price']
         
+        read_only_fields = ['price_at_time_of_addition']
+
+
+
+    def get_total_price(self, obj):
+        return obj.total_price()
+    
+    def create(self, validated_data):
+        product = validated_data.get('product')
+        user = self.context['request'].user
+        cart, created = Cart.objects.get_or_create(user=user)
+        validated_data['cart'] = cart
+        validated_data['price_at_time_of_addition'] = product.price
+
+        return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        quantity = validated_data.pop('quantity')
+        instance.quantity = quantity
+        instance.save()
+        return instance
+    
+
+
+
+class CartSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default = serializers.CurrentUserDefault())
+    items = CartItemSerializer(many=True, read_only=True)
+    total = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Cart
+        fields = ['id', 'user', 'items', 'total']
+
+    
+    def get_total(self, obj):
+        return sum(item.total_price() for item in obj.items.all())

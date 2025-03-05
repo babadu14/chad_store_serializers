@@ -24,6 +24,8 @@ class Review(TimeStampedModel, models.Model):
     content = models.TextField()
     rating = models.PositiveIntegerField(validators=[MaxValueValidator(5)])
 
+    class Meta:
+        unique_together = ['product', 'user']
 
 class FavoriteProduct(TimeStampedModel, models.Model):
     product = models.ForeignKey('products.Product', on_delete=models.CASCADE)
@@ -46,3 +48,16 @@ class ProductImage(TimeStampedModel, models.Model):
     image = models.ImageField(upload_to='products/')
     product = models.ForeignKey('products.Product', related_name='images', on_delete=models.CASCADE)
     
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, related_name='items', on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, related_name='cart_items', on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    price_at_time_of_addition = models.FloatField()
+
+    def __str__(self):
+        return f'{self.product.name}-{self.quantity} items'
+    
+    def total_price(self):
+        return self.quantity * self.price_at_time_of_addition
