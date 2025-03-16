@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     "categories",
 
     'rest_framework',
-    'django_filters'
+    'django_filters',
+    'drf_yasg'
 ]
 
 MIDDLEWARE = [
@@ -134,3 +135,32 @@ AUTH_USER_MODEL = 'users.User'
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',
+        'user': '1000/day',
+        'likes': '30/minute'
+    },
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        ),
+}
+
+
+
+SWAGGER_SETTINGS = {
+    "USER_SESSION_AUTH": False,
+    "SECURITY_DEFINITIONS":{
+        "Bearer":{
+            "type":"apiKey",
+            "name": "Authorization",
+            "in":"header",
+            "description":"შეიყვანეთ JWT ტოკენი შემდეგი პრინციპით Bearer <Token>"
+        }
+    }
+}
