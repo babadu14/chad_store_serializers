@@ -14,7 +14,8 @@ from rest_framework.filters import SearchFilter
 from products.pagination import ProductPagination
 from products.filters import ProductFilter, ReviewFilter
 from django.core.exceptions import PermissionDenied
-
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle, ScopedRateThrottle
+from rest_framework.decorators import action
 
 
 class ProductAPIView(ModelViewSet):
@@ -25,7 +26,24 @@ class ProductAPIView(ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_class = ProductFilter
     search_fields = ['name', 'description']
-    
+    throttle_classes = [UserRateThrottle]
+
+    def perform_update(self, serializer):
+        product = self.get_object()
+        if product.user != self.request.user:
+            raise PermissionDenied("You don't have permission to update this product")
+        serializer.save()
+
+    @action(detail=False, methods=['GET'], permission_classes=[IsAuthenticated])
+    def my_products(self, request):
+        user_products = Product.objects.filter(user=request.user)
+        page = self.paginate_queryset(user_products)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(user_products, many=True)
+        return Response(serializer.data) 
+
 
 class ReviewViewSet(ModelViewSet):
     queryset = Review.objects.all()
@@ -56,11 +74,12 @@ class ProductTagView(ListModelMixin, CreateModelMixin, GenericViewSet):
 
 
 
-class FavoriteProductViewSet(ModelViewSet):
+class FavoriteProductViewSet(ListModelMixin, RetrieveModelMixin, CreateModelMixin ,DestroyModelMixin, GenericViewSet):
     queryset = FavoriteProduct.objects.all()
     serializer_class = FavoriteProductSerializer
     permission_classes = [IsAuthenticated]
-    http_method_names = ['get', 'post', 'delete']
+    throttle_scope = 'likes'
+
 
     def get_queryset(self):
         queryset = self.queryset.filter(user=self.request.user)
