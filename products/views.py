@@ -1,12 +1,11 @@
 from rest_framework.viewsets import ModelViewSet
 from products.models import Product, Review, Cart, ProductTag, FavoriteProduct, ProductImage, CartItem
 from products.serializers import ProductSerializer, ReviewSerializer, CartSerializer, TagSerializer, FavoriteProductSerializer, ProductImageSerializer, CartItemSerializer
-from rest_framework.generics import GenericAPIView, ListCreateAPIView
 from rest_framework.mixins import (CreateModelMixin,
                                    ListModelMixin,
                                    RetrieveModelMixin,
                                    UpdateModelMixin,
-                                   DestroyModelMixin)
+                                   DestroyModelMixin,)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
 from django_filters.rest_framework import DjangoFilterBackend
@@ -16,12 +15,14 @@ from products.filters import ProductFilter, ReviewFilter
 from django.core.exceptions import PermissionDenied
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle, ScopedRateThrottle
 from rest_framework.decorators import action
-from products.permissions import IsObjectOwnerReadOnly
+from products.permissions import IsObjectOwnerOrReadOnly
+from rest_framework.response import Response
+
 
 class ProductAPIView(ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [IsAuthenticated, IsObjectOwnerReadOnly]
+    permission_classes = [IsAuthenticated, IsObjectOwnerOrReadOnly]
     pagination_class = ProductPagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_class = ProductFilter
@@ -44,7 +45,7 @@ class ReviewViewSet(ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, IsObjectOwnerReadOnly]
+    filter_backends = [DjangoFilterBackend, IsObjectOwnerOrReadOnly]
     filterset_class = ReviewFilter
     
     def get_queryset(self):
@@ -99,7 +100,7 @@ class ProductImageViewSet(ListModelMixin, CreateModelMixin, RetrieveModelMixin, 
 class CartItemViewSet(ModelViewSet):
     queryset = CartItem.objects.all()
     serializer_class = CartItemSerializer
-    permission_classes = [IsAuthenticated, IsObjectOwnerReadOnly]
+    permission_classes = [IsAuthenticated, IsObjectOwnerOrReadOnly]
 
     def get_queryset(self):
         return self.queryset.filter(cart__user=self.request.user)
