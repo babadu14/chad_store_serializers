@@ -41,7 +41,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         return value
     
     def update(self, instance, validated_data):
-        password = validated_data.pop('password')
+        password = validated_data.pop('password', None)
         if password:
             instance.password =  make_password(password)
         return super().update(instance, validated_data)
