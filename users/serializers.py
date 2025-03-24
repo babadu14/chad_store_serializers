@@ -34,11 +34,6 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'phone_number', 'email', 'password']
-
-    def validate_password(self, value):
-        if value:
-            return make_password(value)
-        return value
     
     def update(self, instance, validated_data):
         password = validated_data.pop('password', None)
