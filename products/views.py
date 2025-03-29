@@ -17,6 +17,7 @@ from rest_framework.throttling import UserRateThrottle, AnonRateThrottle, Scoped
 from rest_framework.decorators import action
 from products.permissions import IsObjectOwnerOrReadOnly
 from rest_framework.response import Response
+from rest_framework.parsers import FormParser, MultiPartParser
 
 
 class ProductAPIView(ModelViewSet):
@@ -92,6 +93,7 @@ class ProductImageViewSet(ListModelMixin, CreateModelMixin, RetrieveModelMixin, 
     queryset = ProductImage.objects.all()
     serializer_class = ProductImageSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
 
     def get_queryset(self):
         return self.queryset.filter(product__id=self.kwargs['product_pk'])
