@@ -28,4 +28,10 @@ def validate_image_count(product_id):
     if ProductImage.objects.filter(product_id=product_id).count() >= max_images:
         raise ValidationError(f'პროდუქტს უკვე აქვს მაქსიმალური რაოდენობის სურათები')
     
-    
+
+def validate_category_image_count(category_id):
+    CategoryImage = apps.get_model("categories", "CategoryImage")  
+    limit = 5  
+    img_count = CategoryImage.objects.filter(category_id=category_id).count()
+    if img_count >= limit:
+        raise ValidationError("Each category can have a maximum of 5 images.")

@@ -18,7 +18,8 @@ from rest_framework.decorators import action
 from products.permissions import IsObjectOwnerOrReadOnly
 from rest_framework.response import Response
 from rest_framework.parsers import FormParser, MultiPartParser
-
+from rest_framework import status
+from django.core.exceptions import ValidationError
 
 class ProductAPIView(ModelViewSet):
     queryset = Product.objects.all()
@@ -98,6 +99,11 @@ class ProductImageViewSet(ListModelMixin, CreateModelMixin, RetrieveModelMixin, 
     def get_queryset(self):
         return self.queryset.filter(product__id=self.kwargs['product_pk'])
     
+    def create(self, request, *args, **kwargs):
+        try:
+            super().create(request, *args, **kwargs)
+        except ValidationError as e:
+            return Response ({"error":f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
 
 class CartItemViewSet(ModelViewSet):
     queryset = CartItem.objects.all()
