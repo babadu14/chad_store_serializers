@@ -15,8 +15,7 @@ categories_router = routers.NestedDefaultRouter(
 categories_router.register('images', CategoryImageViewSet)
 
 
-urlpatterns = [
-
+urlpatterns = [ 
     path('', include(router.urls)),
     path('', include(categories_router.urls))
     # path('categories/', CategoryListView.as_view(), name='category-list'),
