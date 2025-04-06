@@ -1,11 +1,11 @@
 from django.urls import path, include
-from .views import  CategoryImageViewSet, CategoryListView
+from .views import  CategoryImageViewSet, CategoryViewSet, CategoryDetailView
 from rest_framework.routers import SimpleRouter, DefaultRouter
 from rest_framework_nested import routers
 
 router = routers.DefaultRouter()
 
-router.register('categories', CategoryListView)
+router.register('categories', CategoryViewSet)
 
 categories_router = routers.NestedDefaultRouter(
     router,
@@ -13,12 +13,11 @@ categories_router = routers.NestedDefaultRouter(
     lookup='category'
 )
 categories_router.register('images', CategoryImageViewSet)
+categories_router.register('detail', CategoryDetailView, basename='category-detail')
+
 
 
 urlpatterns = [ 
     path('', include(router.urls)),
     path('', include(categories_router.urls))
-    # path('categories/', CategoryListView.as_view(), name='category-list'),
-    # path('categories/<int:pk>/', CategoryDetailView.as_view(), name='category-detail'),
-    # path('categories/<int:category_id>/images', CategoryImageViewSet.as_view(), name='category-images'),
 ]

@@ -1,8 +1,7 @@
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.generics import GenericAPIView
 from rest_framework.viewsets import GenericViewSet
 from categories.models import Category, CategoryImage
-from .serializers import CategoryDetailSerializer, CategoryImageSerializer, CategorySerializer
+from categories.serializers import CategoryDetailSerializer, CategoryImageSerializer, CategorySerializer
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins
@@ -28,6 +27,9 @@ class CategoryDetailView(mixins.RetrieveModelMixin, GenericViewSet):
 class CategoryImageViewSet(mixins.ListModelMixin,mixins.CreateModelMixin,GenericViewSet):
     queryset = CategoryImage.objects.all()
     serializer_class = CategoryImageSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
 
     def get_queryset(self):
         cateogory_id = self.kwargs['category_pk']
