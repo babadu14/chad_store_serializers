@@ -21,15 +21,17 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ('email','username','phone_number','password', 'password2','first_name', 'last_name')
 
-        def validate(self, attrs):
-            if attrs['password'] != attrs['password2']:
-                raise serializers.ValidationError({'password':'passwords do not match'})
-            return attrs
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError({'password':'passwords do not match'})
+        return attrs
         
-        def create(self, validated_data):
-            validated_data.pop('passowrd2')
-            user = User.objects.create_user(**validated_data)
-            return user
+    def create(self, validated_data):
+        validated_data.pop('password2')
+        user = User.objects.create_user(**validated_data)
+        user.is_active = False
+        user.save()
+        return user
 
 
 class ProfileSerializer(serializers.ModelSerializer):
