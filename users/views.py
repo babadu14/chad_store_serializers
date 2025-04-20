@@ -71,7 +71,8 @@ class RegisterView(mixins.CreateModelMixin, viewsets.GenericViewSet):
             if time_diff < timedelta(minutes=1):
                 wait_seconds = 60 - int(time_diff.total_seconds())
                 return Response(
-                    {"detail":f"please wait {wait_seconds} before requesting a new code"}
+                    {"detail":f"please wait {wait_seconds} before requesting a new code"},
+                    status=429
                 )
             
         self.send_verification_code(user)
