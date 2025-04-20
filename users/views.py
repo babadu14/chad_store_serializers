@@ -19,6 +19,7 @@ from users.models import EmailVerification
 from django.utils import timezone
 from datetime import timedelta
 
+
 User = get_user_model()
 
 
