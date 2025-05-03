@@ -11,4 +11,8 @@ app.autodiscover_tasks()
 
 @shared_task
 def debug_task(x,y):
-    return x + y
+    if x > y:
+        return x
+    else:
+        return y
+
