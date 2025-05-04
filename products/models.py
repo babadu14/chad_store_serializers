@@ -11,7 +11,7 @@ class Product(TimeStampedModel, models.Model):
     currency = models.CharField(max_length=255, choices=Currency.choices, default=Currency.GEL)
     tags = models.ManyToManyField("products.ProductTag", related_name='products', blank=True)
     quantity = models.PositiveIntegerField(default=1)
-    user = models.ForeignKey('users.User', related_name='products', on_delete=models.CASCADE)
+    user = models.ForeignKey('users.User', related_name='products', on_delete=models.CASCADE, null = True, blank=True)
 
     def average_rating(self):
         pass

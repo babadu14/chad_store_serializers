@@ -31,6 +31,11 @@ class ProductAPIView(ModelViewSet):
     search_fields = ['name', 'description']
     throttle_classes = [UserRateThrottle]
 
+    def perform_update(self, serializer):
+        product = self.get_object()
+        if product.user != self.request.user:
+            raise PermissionDenied("You don't have Permission to update this product")
+        serializer.save()
 
     @action(detail=False, methods=['GET'], permission_classes=[IsAuthenticated])
     def my_products(self, request):
@@ -46,13 +51,18 @@ class ProductAPIView(ModelViewSet):
 class ReviewViewSet(ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, IsObjectOwnerOrReadOnly]
+    permission_classes = [IsAuthenticated, IsObjectOwnerOrReadOnly]
+    filter_backends = [DjangoFilterBackend]
     filterset_class = ReviewFilter
     
     def get_queryset(self):
         return self.queryset.filter(product_id=self.kwargs['product_pk'])    
-    
+
+    def perform_update(self, serializer):
+        review = self.get_object()
+        if review.user != self.request.user:
+            raise PermissionDenied('you do not have permission to update this review')
+        serializer.save()    
 
     def perform_destroy(self, instance):
         if instance.user != self.request.user:
@@ -113,6 +123,12 @@ class CartItemViewSet(ModelViewSet):
     def get_queryset(self):
         return self.queryset.filter(cart__user=self.request.user)
     
+    def perform_update(self, serializer):
+        instance = self.get_object()
+        if instance.cart.user != self.request.user:
+            raise PermissionDenied('you do not have permission to update this item')
+        serializer.save()
+
     def perform_destroy(self, instance):
         if instance.cart.user != self.request.user:
             raise PermissionDenied('you do not have permission to delete this item')

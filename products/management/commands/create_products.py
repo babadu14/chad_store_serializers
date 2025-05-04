@@ -16,7 +16,7 @@ class Command(BaseCommand):
         ]
 
 
-        for _ in range(100):
+        for _ in range(1000):
             name = faker.name()
             description = faker.text()
             price = round(random.uniform(1,1000),2)
