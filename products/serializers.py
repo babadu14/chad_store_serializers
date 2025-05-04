@@ -85,7 +85,12 @@ class FavoriteProductSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     reviews = ReviewSerializer(many=True, read_only=True)
-    
+    tag_ids = serializers.PrimaryKeyRelatedField(
+        source="tags",
+        queryset=ProductTag.objects.all(),
+        many=True,
+        write_only=True
+    )
     class Meta:
         exclude = ['created_at', 'updated_at',] 
         model = Product
@@ -93,11 +98,16 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
     def create(self, validated_data):
-        user = validated_data.pop('user')
-        products = validated_data.pop('products')
-        cart, _ = Cart.objects.get_or_create(user=user)
-        cart.products.add(*products)
-        return cart
+        tags = validated_data.pop("tags", [])
+        product = Product.objects.create(**validated_data)
+        product.tags.set(tags)
+        return product
+
+    def update(self, instance, validated_data):
+        tags = validated_data.pop("tags", None)
+        if tags is not None:
+            instance.tags.set(tags) 
+        return super().update(instance, validated_data)
     
 
 class ProductImageSerializer(serializers.ModelSerializer):

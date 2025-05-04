@@ -18,7 +18,7 @@ import random
 from users.models import EmailVerification
 from django.utils import timezone
 from datetime import timedelta
-
+from config.celery import app
 
 User = get_user_model()
 
@@ -56,8 +56,10 @@ class RegisterView(mixins.CreateModelMixin, viewsets.GenericViewSet):
         )
         subject = "Your verification code"
         message = f"Hello {user.username}, your verification code is {code}"
-        send_mail(subject, message, 'no-reply@example.com', [user.email])
-    
+        #send_mail(subject, message, 'no-reply@example.com', [user.email])
+        app.send_task('users.tasks.send_email_async', args=[subject, message, user.email])
+
+
     @action(detail=False, methods=["post"], url_path="resend_code", serializer_class= EmailCodeResendSerializer)
     def resend_code(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -117,13 +119,12 @@ class PasswordResetRequestViewSet(mixins.CreateModelMixin, viewsets.GenericViewS
             )
 
 
-            send_mail(
-                "პაროლის აღდგენა",
-                f"დააჭირე ბმულს რომ აღადგინო პაროლი {reset_url}",
-                'noreply@example.com',
-                [user.email],
-                fail_silently=False,
-            )
+            
+            subject = "პაროლის აღდგენა"
+            message = f"დააჭირე ბმულს რომ აღადგინო პაროლი {reset_url}"
+            app.send_task('users.tasks.send_email_async', args=[subject, message, user.email])
+
+
 
             return Response(
                 {"message": "ბმული გაგზავნილია ელფოსტაზე"}, status=status.HTTP_200_OK
