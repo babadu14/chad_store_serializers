@@ -44,7 +44,8 @@ class RegisterView(mixins.CreateModelMixin, viewsets.GenericViewSet):
         if serializer.is_valid():
             user = serializer.save()
             self.send_verification_code(user)
-            return Response({"detail":"user registered successfully and verification code sent to email"})
+            return Response({"detail":"user registered successfully and verification code sent to email"}, 
+                            status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def send_verification_code(self, user):
@@ -74,7 +75,7 @@ class RegisterView(mixins.CreateModelMixin, viewsets.GenericViewSet):
                 wait_seconds = 60 - int(time_diff.total_seconds())
                 return Response(
                     {"detail":f"please wait {wait_seconds} before requesting a new code"},
-                    status=429
+                    status=status.HTTP_429_TOO_MANY_REQUESTS
                 )
             
         self.send_verification_code(user)
