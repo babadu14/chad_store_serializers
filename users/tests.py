@@ -138,3 +138,19 @@ class AuthenticationTest(TestCase):
 
         response = self.client.post(self.login_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    
+    def test_access_protected_resource(self):
+        login_data = {
+            'email':'auth@example.com',
+            'password':'auth123password',
+        }
+
+        login_response = self.client.post(self.login_url, login_data, format='json')
+        token = login_response.data['access']
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
+        response = self.client.get(self.user_detail_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+    def test_access_without_auth(self):
+        response = self.client.get(self.user_detail_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
