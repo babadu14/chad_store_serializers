@@ -37,6 +37,21 @@ services:
     networks:
       - app_network
 
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A config worker --loglevel=info
+    volumes:
+      - ./media:/app/media
+    depends_on:
+      - db
+      - redis
+    env_file:
+     - .env
+    networks:
+     - app_network
+
 networks:
   app_network:
     driver: bridge
