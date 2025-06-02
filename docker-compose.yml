@@ -2,9 +2,7 @@ version: '3.8'
 
 services:
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: andriamanagadze/chadstore:v1.0
     ports:
       - "8000:8000"
     volumes:
@@ -38,9 +36,7 @@ services:
       - app_network
 
   celery:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: andriamanagadze/chadstore:v1.0
     command: celery -A config worker --loglevel=info
     volumes:
       - ./media:/app/media
